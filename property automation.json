@@ -1,0 +1,573 @@
+{
+  "name": "property automation",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Enter the details ",
+        "formDescription": "Enter the zip code , lang size in sq ft, your email . ",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "zip code",
+              "fieldType": "number",
+              "placeholder": "90011",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "property size in sq ft ",
+              "fieldType": "number",
+              "placeholder": "5000",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "email",
+              "fieldType": "email",
+              "placeholder": "sample@gmail.com",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "cf47c314-06b3-4edc-8c54-d678d9821893",
+      "name": "On form submission",
+      "webhookId": "840adf9f-ccfa-4f88-a6df-dbcaa67e13bd"
+    },
+    {
+      "parameters": {
+        "url": "https://api.gateway.attomdata.com/propertyapi/v1.0.0/property/address",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "postalcode",
+              "value": "={{ $json[\"zip code\"] }}"
+            },
+            {
+              "name": "page",
+              "value": "1"
+            },
+            {
+              "name": "pagesize",
+              "value": "100"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/json"
+            },
+            {
+              "name": "APIKey",
+              "value": "aca60322dc8b0607dd8535f6f3baf596"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "ceff36f5-7bc2-4677-88b9-ca63e8b87341",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "url": "https://api.gateway.attomdata.com/propertyapi/v1.0.0/property/detail",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "attomid",
+              "value": "={{ $json.identifier.attomId }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/json"
+            },
+            {
+              "name": "APIKey",
+              "value": "aca60322dc8b0607dd8535f6f3baf596"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        896,
+        32
+      ],
+      "id": "7aa959f6-20e3-40ad-8ea3-e69cb70ae804",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "property",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        416,
+        0
+      ],
+      "id": "45d2a7ba-3265-43d3-a30c-5f6efd1797d3",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        672,
+        -80
+      ],
+      "id": "272a937e-826d-4d65-b148-3d58b60305b8",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "46b60b81-1f59-4b90-b86d-e07e624a82a9",
+              "leftValue": "={{ $json.property[0].building.size.livingsize }}",
+              "rightValue": "={{ $('On form submission').item.json[\"property size in sq ft \"] }}",
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        896,
+        -176
+      ],
+      "id": "d9ba17f9-79a0-410c-8b0b-83e9106ffd26",
+      "name": "Filter"
+    },
+    {
+      "parameters": {
+        "url": "https://maps.googleapis.com/maps/api/streetview",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "size",
+              "value": "640x640"
+            },
+            {
+              "name": "location",
+              "value": "={{ $json.property[0].location.latitude }},{{ $json.property[0].location.longitude }}"
+            },
+            {
+              "name": "heading",
+              "value": "0"
+            },
+            {
+              "name": "pitch",
+              "value": "0"
+            },
+            {
+              "name": "key",
+              "value": "AIzaSyAi1QCVQJGUdT5E_YU_rK3PeHbKoQDKlc8"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file",
+              "outputPropertyName": "streetview_before.jpg"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1104,
+        -176
+      ],
+      "id": "d22bee4c-e29e-407a-86d2-8d3a029d2e6f",
+      "name": "HTTP Request2"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/images/edits",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer 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"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "model",
+              "value": "dall-e-2"
+            },
+            {
+              "name": "prompt",
+              "value": "Transform the scene from daytime to nightime. Replace the sky with a deep twilight/night sky with subtle stars. Add warm landscape lighting along the house foundation to highlight architectural features. Install uplighting on trees and bushes for depth. Add soffit lighting under the eaves casting a warm glow on exterior walls. Include pathway and ground-level accent lighting. Ensure all interior windows show warm interior light. Preserve natural shadows and realistic light falloff. Use warm white lighting (2700–3000K). Keep house structure, materials, and colors unchanged. Balance exposure between illuminated areas and dark sky. Add subtle ambient lighting on lawn and driveway. Style: professional architectural photography, high-end residential exterior, realistic lighting.|"
+            },
+            {
+              "parameterType": "formBinaryData",
+              "name": "image",
+              "inputDataFieldName": "data"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2176,
+        -176
+      ],
+      "id": "605f8e14-ce16-4714-ba71-60bfa7999a34",
+      "name": "HTTP Request3"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.imgbb.com/1/upload",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "image",
+              "inputDataFieldName": "streetview_before.jpg"
+            }
+          ]
+        },
+        "options": {
+          "redirect": {
+            "redirect": {}
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1312,
+        -176
+      ],
+      "id": "dc7316b5-0223-4965-a1c3-77ab460a9fee",
+      "name": "HTTP Request12",
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "Jteih3x1DEpGusnz",
+          "name": "Imgbb"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://v2.convertapi.com/convert/jpg/to/png",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer PUhsxJUdjJTpuKynaalLAPNtveXA3Zna"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "StoreFile",
+              "value": "true"
+            },
+            {
+              "name": "File",
+              "value": "={{ $json.data.url }}"
+            },
+            {
+              "name": "TransparentColor",
+              "value": "255,255,255"
+            },
+            {
+              "name": "ColorTolerance",
+              "value": "10"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1520,
+        -176
+      ],
+      "id": "03554ad2-4f3f-4390-adfc-72cbd9b9e093",
+      "name": "HTTP Request14"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.Files[0].Url }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1728,
+        -176
+      ],
+      "id": "da0fc8de-cad3-4a96-91e7-57d9732699e6",
+      "name": "HTTP Request15"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.data[0].url }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2176,
+        -320
+      ],
+      "id": "ac9aa695-0abc-430f-9f21-b2e8d2454391",
+      "name": "HTTP Request16"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1952,
+        -304
+      ],
+      "id": "a11393ec-05c2-41b3-888a-57e220f1031f",
+      "name": "Loop Over Items1"
+    }
+  ],
+  "pinData": {
+    "On form submission": [
+      {
+        "json": {
+          "zip code": 90011,
+          "property size in sq ft ": 3000,
+          "email": "jijeshrajkai@gmail.com",
+          "submittedAt": "2025-12-24T10:53:43.509+05:30",
+          "formMode": "test"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Filter",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request2": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request12",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request3": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request12": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request14",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request14": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request15",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request15": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request16",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP Request3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "6b8ddd2d-ed42-40f9-bae2-61f4a1651b16",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2f22362bcfc784e943ec2d2654415e5fe37b8e9ebaec65d2c7a4613197fa8cd6"
+  },
+  "id": "GCzA483ViNFI9gp5",
+  "tags": []
+}
